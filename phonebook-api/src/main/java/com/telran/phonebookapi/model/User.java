@@ -26,12 +26,14 @@ public class User {
     @Setter
     private String password;
 
+    private boolean isActive = false;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
     private List<Contact> contacts = new ArrayList<>();
 
-    public User(String name, String lastName) {
-        this.name = name;
-        this.lastName = lastName;
+    public User(String email, String password) {
+        this.email = email;
+        this.password = password;
     }
 
     public void addContact(Contact contact) {

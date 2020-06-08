@@ -18,6 +18,8 @@ public class PhoneNumber {
     private int id;
 
     @Setter
+    private String countryCode;
+    @Setter
     private String number;
 
     @ManyToOne

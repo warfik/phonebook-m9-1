@@ -17,6 +17,12 @@ public class Address {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     @Setter
+    private String zipCode;
+    @Setter
+    private String country;
+    @Setter
+    private String city;
+    @Setter
     private String address;
 
     @ManyToOne

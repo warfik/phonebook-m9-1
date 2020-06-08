@@ -25,6 +25,8 @@ public class Contact {
     private String lastName;
     @Setter
     private String description;
+    @ElementCollection
+    private List<String> emails;
 
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -36,10 +38,11 @@ public class Contact {
     @OneToMany(mappedBy = "contact", cascade = CascadeType.REMOVE)
     private List<Address> addresses = new ArrayList<>();
 
-    public Contact(String name, String lastName, String description, User user) {
+    public Contact(String name, String lastName, String description, List<String> emails, User user) {
         this.name = name;
         this.lastName = lastName;
         this.description = description;
         this.user = user;
+        this.emails = emails;
     }
 }
