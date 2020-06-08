@@ -38,11 +38,16 @@ public class Contact {
     @OneToMany(mappedBy = "contact", cascade = CascadeType.REMOVE)
     private List<Address> addresses = new ArrayList<>();
 
-    public Contact(String name, String lastName, String description, List<String> emails, User user) {
+    public Contact(String name, User user) {
         this.name = name;
-        this.lastName = lastName;
-        this.description = description;
         this.user = user;
-        this.emails = emails;
+    }
+
+    public void addPhoneNumber(PhoneNumber phoneNumber) {
+        numbers.add(phoneNumber);
+    }
+
+    public void addAddress(Address address) {
+        addresses.add(address);
     }
 }
