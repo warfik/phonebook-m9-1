@@ -9,6 +9,6 @@ public interface IPhoneNumberRepository extends CrudRepository<PhoneNumber, Inte
 
     public List<PhoneNumber> findByContactId(int id);
 
-    public void removePhoneNumberByNumber(String number);
+    public void removePhoneNumberById(int id);
 
 }

@@ -39,7 +39,7 @@ class IAddressRepositoryTest {
     }
 
     @Test
-    public void testRemoveAddressByAddress_contactWithAddressExistsInTheList_emptyList() {
+    public void testRemoveAddressById_contactWithAddressExistsInTheList_emptyList() {
 
         User user = new User("email", "password");
         Contact contact = new Contact("ContactName", user);
@@ -50,7 +50,7 @@ class IAddressRepositoryTest {
         entityManager.persist(address);
         entityManager.flush();
 
-        addressRepository.removeAddressByAddress(address.getAddress());
+        addressRepository.removeAddressById(address.getId());
         List<Address> foundedPhoneNumbersFromDB = addressRepository.findByContactId(contact.getId());
 
         assertEquals(0, foundedPhoneNumbersFromDB.size());

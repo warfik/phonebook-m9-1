@@ -9,6 +9,6 @@ public interface IAddressRepository extends CrudRepository<Address, Integer> {
 
     public List<Address> findByContactId(int id);
 
-    public void removeAddressByAddress(String address);
+    public void removeAddressById(int id);
 
 }

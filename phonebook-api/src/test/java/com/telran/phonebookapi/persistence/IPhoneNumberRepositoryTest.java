@@ -39,7 +39,7 @@ class IPhoneNumberRepositoryTest {
     }
 
     @Test
-    public void testRemovePhoneNumberByNumber_contactWithPhoneNumberExistsInTheList_emptyList() {
+    public void testRemovePhoneNumberById_contactWithPhoneNumberExistsInTheList_emptyList() {
 
         User user = new User("email", "password");
         Contact contact = new Contact("ContactName", user);
@@ -50,7 +50,7 @@ class IPhoneNumberRepositoryTest {
         entityManager.persist(phoneNumber);
         entityManager.flush();
 
-        phoneNumberRepository.removePhoneNumberByNumber(phoneNumber.getNumber());
+        phoneNumberRepository.removePhoneNumberById(phoneNumber.getId());
         List<PhoneNumber> foundedPhoneNumbersFromDB = phoneNumberRepository.findByContactId(contact.getId());
 
         assertEquals(0, foundedPhoneNumbersFromDB.size());
