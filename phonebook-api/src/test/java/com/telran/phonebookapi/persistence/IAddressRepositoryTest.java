@@ -26,7 +26,7 @@ class IAddressRepositoryTest {
 
         User user = new User("email", "password");
         Contact contact = new Contact("ContactName", user);
-        Address address = new Address("Test street 01", contact);
+        Address address = new Address("Test street", contact);
 
         entityManager.persist(user);
         entityManager.persist(contact);
@@ -36,7 +36,8 @@ class IAddressRepositoryTest {
 
         List<Address> foundedAddresses = addressRepository.findByContact(contact);
         assertEquals(1, foundedAddresses.size());
-        assertEquals("Test street 01", foundedAddresses.get(0).getAddress());
+        assertEquals("Test street", foundedAddresses.get(0).getAddress());
+
     }
 
 }
