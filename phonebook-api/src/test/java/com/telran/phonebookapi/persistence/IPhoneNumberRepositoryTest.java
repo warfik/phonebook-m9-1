@@ -22,7 +22,7 @@ class IPhoneNumberRepositoryTest {
     IPhoneNumberRepository phoneNumberRepository;
 
     @Test
-    public void testFindPhoneNumberByContactId_contactWithPhoneNumberExistsInTheList_listWithOnePhoneNumber() {
+    public void testFindPhoneNumberByContact_contactWithPhoneNumberExistsInTheList_listWithOnePhoneNumber() {
 
         User user = new User("email", "password");
         Contact contact = new Contact("ContactName", user);
@@ -32,28 +32,11 @@ class IPhoneNumberRepositoryTest {
         entityManager.persist(contact);
         entityManager.persist(phoneNumber);
         entityManager.flush();
+        entityManager.clear();
 
-        List<PhoneNumber> foundedPhoneNumbers = phoneNumberRepository.findByContactId(contact.getId());
+        List<PhoneNumber> foundedPhoneNumbers = phoneNumberRepository.findByContact(contact);
         assertEquals(1, foundedPhoneNumbers.size());
         assertEquals("111111", foundedPhoneNumbers.get(0).getNumber());
-    }
-
-    @Test
-    public void testRemovePhoneNumberById_contactWithPhoneNumberExistsInTheList_emptyList() {
-
-        User user = new User("email", "password");
-        Contact contact = new Contact("ContactName", user);
-        PhoneNumber phoneNumber = new PhoneNumber("111111", contact);
-
-        entityManager.persist(user);
-        entityManager.persist(contact);
-        entityManager.persist(phoneNumber);
-        entityManager.flush();
-
-        phoneNumberRepository.removePhoneNumberById(phoneNumber.getId());
-        List<PhoneNumber> foundedPhoneNumbersFromDB = phoneNumberRepository.findByContactId(contact.getId());
-
-        assertEquals(0, foundedPhoneNumbersFromDB.size());
     }
 
 }

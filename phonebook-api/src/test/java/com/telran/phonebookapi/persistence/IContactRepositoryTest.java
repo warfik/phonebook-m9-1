@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,12 +23,6 @@ class IContactRepositoryTest {
     IContactRepository contactRepository;
 
     @Test
-    public void testFindAllContacts_noContactsExistInTheList_emptyList() {
-        List<Contact> foundedContacts = contactRepository.findAll();
-        assertEquals(0, foundedContacts.size());
-    }
-
-    @Test
     public void testFindContactByName_oneRecord_foundContact() {
         User user = new User("email", "password");
         Contact contact = new Contact("ContactName", user);
@@ -35,6 +30,7 @@ class IContactRepositoryTest {
         entityManager.persist(user);
         entityManager.persist(contact);
         entityManager.flush();
+        entityManager.clear();
 
         List<Contact> foundedContactsFromDB = contactRepository.findByName("ContactName");
         assertEquals(1, foundedContactsFromDB.size());
@@ -51,6 +47,7 @@ class IContactRepositoryTest {
         entityManager.persist(user);
         entityManager.persist(contact);
         entityManager.flush();
+        entityManager.clear();
 
         List<Contact> foundedContactsFromDB = contactRepository.findByLastName("ContactLastName");
         assertEquals(1, foundedContactsFromDB.size());
@@ -59,7 +56,7 @@ class IContactRepositoryTest {
     }
 
     @Test
-    public void testRemoveContactByLastName_oneRecord_emptyList() {
+    public void testDeleteContactByLastName_oneRecord_emptyList() {
         User user = new User("email", "password");
         Contact contact = new Contact("ContactName", user);
         contact.setLastName("ContactLastName");
@@ -67,9 +64,11 @@ class IContactRepositoryTest {
         entityManager.persist(user);
         entityManager.persist(contact);
         entityManager.flush();
+        entityManager.clear();
 
-        contactRepository.removeContactByLastName("ContactLastName");
-        List<Contact> foundedContactsFromDB = contactRepository.findAll();
+        contactRepository.deleteContactByLastName("ContactLastName");
+        List<Contact> foundedContactsFromDB = new ArrayList<>();
+        contactRepository.findAll().forEach(foundedContactsFromDB::add);
         assertEquals(0, foundedContactsFromDB.size());
 
     }

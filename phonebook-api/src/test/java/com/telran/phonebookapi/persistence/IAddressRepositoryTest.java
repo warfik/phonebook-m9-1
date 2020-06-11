@@ -22,7 +22,7 @@ class IAddressRepositoryTest {
     IAddressRepository addressRepository;
 
     @Test
-    public void testFindAddressByContactId_contactWithAddressExistsInTheList_listWithOneAddress() {
+    public void testFindAddressByContact_contactWithAddressExistsInTheList_listWithOneAddress() {
 
         User user = new User("email", "password");
         Contact contact = new Contact("ContactName", user);
@@ -32,27 +32,11 @@ class IAddressRepositoryTest {
         entityManager.persist(contact);
         entityManager.persist(address);
         entityManager.flush();
+        entityManager.clear();
 
-        List<Address> foundedAddresses = addressRepository.findByContactId(contact.getId());
+        List<Address> foundedAddresses = addressRepository.findByContact(contact);
         assertEquals(1, foundedAddresses.size());
         assertEquals("Test street 01", foundedAddresses.get(0).getAddress());
     }
 
-    @Test
-    public void testRemoveAddressById_contactWithAddressExistsInTheList_emptyList() {
-
-        User user = new User("email", "password");
-        Contact contact = new Contact("ContactName", user);
-        Address address = new Address("Test street 01", contact);
-
-        entityManager.persist(user);
-        entityManager.persist(contact);
-        entityManager.persist(address);
-        entityManager.flush();
-
-        addressRepository.removeAddressById(address.getId());
-        List<Address> foundedPhoneNumbersFromDB = addressRepository.findByContactId(contact.getId());
-
-        assertEquals(0, foundedPhoneNumbersFromDB.size());
-    }
 }

@@ -7,12 +7,10 @@ import java.util.List;
 
 public interface IContactRepository extends CrudRepository<Contact, Integer> {
 
-    public List<Contact> findAll();
-
     public List<Contact> findByName(String name);
 
     public List<Contact> findByLastName(String lastName);
 
-    public void removeContactByLastName(String lastName);
+    public void deleteContactByLastName(String lastName);
 
 }

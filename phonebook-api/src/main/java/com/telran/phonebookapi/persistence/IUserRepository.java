@@ -7,8 +7,6 @@ import java.util.List;
 
 public interface IUserRepository extends CrudRepository<User, Integer> {
 
-    public List<User> findAll();
-
     public List<User> findByEmail(String email);
 
 }

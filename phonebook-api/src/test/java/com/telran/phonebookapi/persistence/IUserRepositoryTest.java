@@ -20,17 +20,12 @@ class IUserRepositoryTest {
     IUserRepository userRepository;
 
     @Test
-    public void testFindAllUsers_noUsersExistInTheList_emptyList() {
-        List<User> foundedUsers = userRepository.findAll();
-        assertEquals(0, foundedUsers.size());
-    }
-
-    @Test
     public void testFindUserByEmail_oneRecord_foundUser() {
         User user = new User("email", "password");
 
         entityManager.persist(user);
         entityManager.flush();
+        entityManager.clear();
 
         List<User> foundedUsersFromDB = userRepository.findByEmail("email");
         assertEquals(1, foundedUsersFromDB.size());
