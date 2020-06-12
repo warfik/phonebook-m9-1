@@ -32,10 +32,10 @@ public class Contact {
     @OnDelete(action = OnDeleteAction.CASCADE)
     User user;
 
-    @OneToMany(mappedBy = "contact", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "contact", cascade = {CascadeType.ALL}, orphanRemoval = true)
     private List<PhoneNumber> numbers = new ArrayList<>();
 
-    @OneToMany(mappedBy = "contact", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "contact", cascade = {CascadeType.ALL}, orphanRemoval = true)
     private List<Address> addresses = new ArrayList<>();
 
     public Contact(String name, User user) {

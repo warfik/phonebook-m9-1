@@ -1,13 +1,9 @@
 package com.telran.phonebookapi.model;
 
-import com.telran.phonebookapi.persistence.IAddressRepository;
-import com.telran.phonebookapi.persistence.IPhoneNumberRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,12 +12,6 @@ class ContactTest {
 
     @Autowired
     TestEntityManager entityManager;
-
-    @Autowired
-    IAddressRepository addressRepository;
-
-    @Autowired
-    IPhoneNumberRepository phoneNumberRepository;
 
     @Test
     public void testAddPhoneNumber_contactWithoutPhoneNumber_onePhoneNumber() {
@@ -40,12 +30,6 @@ class ContactTest {
         PhoneNumber phoneNumberFromDB = entityManager.find(PhoneNumber.class, 1);
         assertEquals(phoneNumberFromDB.getNumber(), "111111");
 
-        assertEquals("111111", contact.getNumbers().get(0).getNumber());
-        assertEquals(1, contact.getNumbers().size());
-
-        List<PhoneNumber> foundedPhoneNumbers = phoneNumberRepository.findByContact(contact);
-        assertEquals("111111", foundedPhoneNumbers.get(0).getNumber());
-        assertEquals(1, foundedPhoneNumbers.size());
     }
 
     @Test
@@ -65,12 +49,6 @@ class ContactTest {
         Address addressFromDB = entityManager.find(Address.class, 1);
         assertEquals(addressFromDB.getAddress(), "Test street");
 
-        assertEquals("Test street", contact.getAddresses().get(0).getAddress());
-        assertEquals(1, contact.getAddresses().size());
-
-        List<Address> foundedAddresses = addressRepository.findByContact(contact);
-        assertEquals("Test street", foundedAddresses.get(0).getAddress());
-        assertEquals(1, foundedAddresses.size());
     }
 
 }

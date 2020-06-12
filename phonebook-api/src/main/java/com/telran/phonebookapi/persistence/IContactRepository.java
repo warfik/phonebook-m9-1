@@ -11,6 +11,4 @@ public interface IContactRepository extends CrudRepository<Contact, Integer> {
 
     public List<Contact> findByLastName(String lastName);
 
-    public void deleteContactByLastName(String lastName);
-
 }

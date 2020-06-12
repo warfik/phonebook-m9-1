@@ -13,15 +13,11 @@ import java.util.List;
 @NoArgsConstructor
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
     @Setter
     private String name;
     @Setter
     private String lastName;
-
+    @Id
     private String email;
     @Setter
     private String password;
