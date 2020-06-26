@@ -1,6 +1,6 @@
-spring.datasource.url=jdbc:postgresql://localhost:5432/phonebook
-spring.datasource.username=<db username>
-spring.datasource.password=<password>
+#spring.datasource.url=jdbc:postgresql://localhost:5432/phonebook
+#spring.datasource.username=<db username>
+#spring.datasource.password=<password>
 
 spring.jpa.hibernate.ddl-auto=<create, update or something>
 
@@ -12,8 +12,5 @@ spring.mail.username=
 spring.mail.password=
 spring.mail.properties.mail.smtp.starttls.required=true
 spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.connectiontimeout=5000
-spring.mail.properties.mail.smtp.timeout=5000
-spring.mail.properties.mail.smtp.writetimeout=5000
 
 com.telran.phonebook.ui.host=http://localhost:4200/

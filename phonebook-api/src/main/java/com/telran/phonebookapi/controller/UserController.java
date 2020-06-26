@@ -18,7 +18,7 @@ public class UserController {
     }
 
 
-    @PostMapping("/")
+    @PostMapping("")
     public void addUser(@RequestBody @Valid UserDto userDto) {
         userService.saveUser(userDto.getEmail(), userDto.getPassword());
     }

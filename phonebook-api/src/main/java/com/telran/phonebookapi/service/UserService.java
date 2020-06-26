@@ -30,12 +30,11 @@ public class UserService {
     }
 
     @Value("${com.telran.phonebook.ui.host}")
-    private String uiHost;
+    String uiHost;
 
     private final String REGISTRATION_MESSAGE = "Thank you for registration on PhoneBook Appl." +
-            " Please, visit the following link:" +
-            uiHost +
-            "user/activation/";
+            " Please, visit the following link: %s" +
+            "user/activation/%s";
     private static final String SUBJ = "activation of you account";
     private static final String USER_EXISTS = "User already exists";
     private static final String NO_REGISTRATION = "Please, register";
@@ -59,9 +58,10 @@ public class UserService {
             ConfirmationToken token = new ConfirmationToken(user, tokenString);
             confirmationTokenRepository.save(token);
 
+            String message = String.format(REGISTRATION_MESSAGE, uiHost, tokenString);
             emailSenderService.sendMail(email, mailFrom,
                     SUBJ,
-                    REGISTRATION_MESSAGE + tokenString);
+                    message);
         }
     }
 
