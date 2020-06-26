@@ -2,14 +2,15 @@
 #spring.datasource.username=<db username>
 #spring.datasource.password=<password>
 
-spring.jpa.hibernate.ddl-auto=<create, update or something>
+spring.jpa.hibernate.ddl-auto=create-drop
 
 ###### Email Properties ######
 spring.mail.host=smtp.gmail.com
 spring.mail.port=587
 spring.mail.properties.mail.smtp.starttls.enable=true
-spring.mail.username=
-spring.mail.password=
+spring.mail.username=springangular98@gmail.com
+spring.mail.password=Telran789
+
 spring.mail.properties.mail.smtp.starttls.required=true
 spring.mail.properties.mail.smtp.auth=true
 
