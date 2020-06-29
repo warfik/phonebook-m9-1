@@ -43,7 +43,8 @@ public class UserService {
     static final String USER_EXISTS = "User already exists";
     static final String NO_REGISTRATION = "Please, register";
     final String MESSAGE_RECOVER_PASSWORD_REQUEST = "You have requested the recovery password option." +
-            " Please, visit next link: %s/user/new-password/%s";
+            " Please, visit next link: %s" +
+            "user/new-password/%s";
     static final String RECOVERY_PASSWORD = "Recovery password";
     static final String USER_DOESNT_EXIST = "Person not found";
     static final String INVALID_TOKEN = "Please, request your link once again";
