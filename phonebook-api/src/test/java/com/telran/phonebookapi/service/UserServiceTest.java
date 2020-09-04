@@ -1,14 +1,13 @@
 package com.telran.phonebookapi.service;
 
-import com.telran.phonebookapi.errorHandler.TokenNotFoundException;
-import com.telran.phonebookapi.errorHandler.UserExistsException;
-import com.telran.phonebookapi.model.ConfirmationToken;
+import com.telran.phonebookapi.dto.UserDto;
+import com.telran.phonebookapi.model.RecoveryToken;
 import com.telran.phonebookapi.model.User;
-import com.telran.phonebookapi.persistence.IConfirmationTokenRepository;
-import com.telran.phonebookapi.errorHandler.UserDoesntExistException;
-import com.telran.phonebookapi.model.RecoveryPasswordToken;
-import com.telran.phonebookapi.persistence.IRecoveryPasswordToken;
-import com.telran.phonebookapi.persistence.IUserRepository;
+import com.telran.phonebookapi.persistance.IActivationTokenRepository;
+import com.telran.phonebookapi.persistance.IContactRepository;
+import com.telran.phonebookapi.persistance.IRecoveryTokenRepository;
+import com.telran.phonebookapi.persistance.IUserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -16,171 +15,164 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Optional;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class UserServiceTest {
+class UserServiceTest {
+
     @Mock
     IUserRepository userRepository;
 
     @Mock
-    IConfirmationTokenRepository confirmationTokenRepository;
+    IRecoveryTokenRepository recoveryTokenRepository;
 
     @Mock
-    IRecoveryPasswordToken recoveryPasswordTokenRepository;
+    IActivationTokenRepository activationTokenRepository;
 
     @Mock
-    EmailSenderService emailSenderService;
+    EmailSender emailSender;
 
     @Mock
-    BCryptPasswordEncoder encoder;
+    BCryptPasswordEncoder bCryptPasswordEncoder;
+
+    @Mock
+    IContactRepository contactRepository;
 
     @InjectMocks
     UserService userService;
 
-    @Captor
-    private ArgumentCaptor<User> userArgumentCaptor;
-
-    @Value("${spring.mail.username}")
-    private String mailFrom;
-
-    @Test
-    public void test_saveUser_withValidData() {
-        User user = new User("mock@mail.de", "dasfsdf");
-
-        userService.saveUser(user.getEmail(), user.getPassword());
-        String tokenString = "12233";
-
-        ConfirmationToken confirmationToken = new ConfirmationToken(user, tokenString);
-
-        emailSenderService.sendMail(user.getEmail(), mailFrom, "conf", "link");
-
-        verify(userRepository, times(1)).save(userArgumentCaptor.capture());
-
-        User captorValue = userArgumentCaptor.getValue();
-        assertEquals(captorValue.getEmail(), user.getEmail());
-
-        verify(userRepository, times(1)).findById(anyString());
-        verify(confirmationTokenRepository, times(1)).save(any());
-        verify(encoder, times(1)).encode(anyString());
-
+    @BeforeEach
+    public void init() {
+        lenient().doAnswer(invocation -> invocation.getArgument(0)).when(bCryptPasswordEncoder).encode(anyString());
     }
 
     @Test
-    public void test_activateUser_statusOk() {
-        User user = new User("mock@mail.de", "dasfsdf");
-        user.setActive(true);
+    public void testSendRecoveryToken_tokenIsSavedToRepo() {
+        String email = "johndoe@mail.com";
+        User ourUser = new User(email, "1234");
 
-        String tokenString = "12333";
-        ConfirmationToken token = new ConfirmationToken(user, tokenString);
+        when(userRepository.findById(email)).thenReturn(Optional.of(ourUser));
 
-        when(confirmationTokenRepository.findById(tokenString)).thenReturn(Optional.of(token));
+        userService.sendRecoveryToken(email);
 
-        userService.activateUser(tokenString);
-        verify(userRepository, times(1)).save(userArgumentCaptor.capture());
+        verify(recoveryTokenRepository, times(1)).save(any());
 
-        User userValue = userArgumentCaptor.getValue();
-        assertEquals(userValue.getEmail(), user.getEmail());
+        verify(recoveryTokenRepository, times(1)).save(argThat(token ->
+                token.getUser().getEmail().equals(email)));
 
-        verify(confirmationTokenRepository, times(1)).findById(any());
-        verify(confirmationTokenRepository, times(1)).delete(any());
-
+        verify(emailSender, times(1)).sendMail(eq(email), anyString(), anyString());
     }
 
     @Test
-    public void test_saveUser_userAlreadyCreated() {
+    public void testCreateNewPassword_newPasswordIsSaved() {
+        User ourUser = new User("johndoe@mail.com", "1234");
+        String token = UUID.randomUUID().toString();
+        RecoveryToken recoveryToken = new RecoveryToken(token, ourUser);
 
-        User user = new User("mock@mail.de", "dasfsdf");
+        when(recoveryTokenRepository.findById(token)).thenReturn(Optional.of(recoveryToken));
 
-        when(userRepository.findById(user.getEmail())).thenThrow(new UserExistsException("already exists"));
+        userService.createNewPassword(token, "4321");
 
+        verify(userRepository, times(1)).save(any());
 
-        Exception userExistsException = assertThrows(UserExistsException.class, () -> userService.saveUser(user.getEmail(), user.getPassword()));
-        assertEquals("already exists", userExistsException.getMessage());
+        verify(userRepository, times(1)).save(argThat(user ->
+                user.getPassword().equals("4321")));
 
+        verify(recoveryTokenRepository, times(1)).findById(token);
     }
 
     @Test
-    public void test_activateUser_with_TokenNotFoundException() {
-        User user = new User("mock@mail.de", "dasfsdf");
-        String tokenString = "12333";
+    public void testAdd_user_passesToRepo() {
 
-        ConfirmationToken token = new ConfirmationToken(user, tokenString);
+        UserDto userDto = UserDto.builder()
+                .email("ivanov@gmail.com")
+                .password("pass")
+                .build();
 
-        when(confirmationTokenRepository.findById(token.getConfirmationToken())).thenThrow(new TokenNotFoundException("please register"));
-        Exception exception = assertThrows(TokenNotFoundException.class, () -> userService.activateUser(tokenString));
-        assertEquals("please register", exception.getMessage());
-    }
+        userService.addUser(userDto);
 
-
-    @Test
-    public void testRequestRecoveryPassword_EmptyList_UserDoesntExistsException() {
-        String email = "test@gmail.com";
-
-        Exception exception = assertThrows(UserDoesntExistException.class, () -> userService.requestRecoveryPassword(email));
-
-        verify(userRepository, times(1)).findById(anyString());
-        assertEquals("Person not found", exception.getMessage());
-    }
-
-    @Test
-    public void testRequestRecoveryPassword_UserExist_TokenGenerated() {
-        User user = new User("test@gmail.com", "test");
-        String generatedToken = "12345";
-
-        when(userRepository.findById(user.getEmail())).thenReturn(Optional.of(user));
-
-        userService.requestRecoveryPassword(user.getEmail());
-
-        verify(userRepository, times(1)).findById(user.getEmail());
-
-        verify(recoveryPasswordTokenRepository, times(1)).save(argThat(
-                argument -> argument.getUser() == user && argument.getRecoveryPasswordToken().length() > 0
+        verify(userRepository, times(1)).save(any());
+        verify(userRepository, times(1)).save(argThat(user ->
+                user.getEmail().equals(userDto.email)
+                        && user.getPassword().equals(userDto.password)
         ));
+        verify(activationTokenRepository, times(1)).save(any());
+        verify(activationTokenRepository, times(1)).save(argThat(token ->
+                token.getUser().getEmail().equals(userDto.email)
+        ));
+        verify(emailSender, times(1)).sendMail(eq(userDto.email),
+                eq(UserService.ACTIVATION_SUBJECT),
+                anyString());
     }
 
-    @Test
-    public void testChangePassword_UserExistsAndInvalidToken_TokenNotFoundException() {
-        String token = "testToken";
-        String email = "test@gmail.com";
+//    @Test
+//    public void testEditAllFields_userExist_AllFieldsChanged() {
+//
+//        User oldUser = new User("test@gmail.com", "12345678");
+//        Contact oldProfile = new Contact();
+//        oldProfile.setFirstName("Name");
+//        oldProfile.setLastName("LastName");
+//        oldUser.setMyProfile(oldProfile);
+//
+//        UserDto userDto = UserDto.builder()
+//                .email("test@gmail.com")
+//                .password("12345678")
+//                .build();
+//
+//
+//        ContactDto profileDto = new ContactDto();
+//        profileDto.firstName = "NewName";
+//        profileDto.lastName = "NewLastName";
+//        userDto.myProfile = profileDto;
+//
+//        when(userRepository.findById(userDto.email)).thenReturn(Optional.of(oldUser));
+//
+//        userService.editAllFields(userDto);
+//
+//        verify(userRepository, times(1)).save(any());
+//
+//        verify(userRepository, times(1)).save(argThat(user ->
+//                user.getEmail().equals(userDto.email)
+//                        && user.getMyProfile().getFirstName().equals(userDto.myProfile.firstName) && user.getMyProfile().getLastName().equals(userDto.myProfile.lastName
+//                )));
+//    }
 
-        Exception exception = assertThrows(TokenNotFoundException.class, () -> userService.changePassword(token, email));
+//    @Test
+//    public void testEditAny_userDoesNotExist_EntityNotFoundException() {
+//
+//        UserDto userDto = new UserDto("test@gmail.com", "12345678");
+//
+//        Exception exception = assertThrows(EntityNotFoundException.class, () -> userService.editAllFields(userDto));
+//
+//        verify(userRepository, times(1)).findById(any());
+//        assertEquals("Error! This user doesn't exist in our DB", exception.getMessage());
+//    }
 
-        verify(recoveryPasswordTokenRepository, times(1)).findById(any());
-        assertEquals("Please, request your link once again", exception.getMessage());
-    }
+    @Captor
+    ArgumentCaptor<User> userCaptor;
 
-    @Test
-    public void testChangePassword_UserExistsAndValidToken_Status200() {
-        User user = new User("test@gmail.com", "test");
-        user.setActive(true);
+//    @Test
+//    public void testRemoveById_userExists_UserDeleted() {
+//
+//        User user = new User("test@gmail.com", "12345678");
+//
+//        UserDto userDto = UserDto.builder()
+//                .email(user.getEmail())
+//                .password(user.getPassword())
+//                .build();
+//
+//        when(userRepository.findById(userDto.email)).thenReturn(Optional.of(user));
+//        userService.removeById(userDto.email);
+//
+//        List<User> capturedUsers = userCaptor.getAllValues();
+//        verify(userRepository, times(1)).deleteById(userDto.email);
+//        assertEquals(0, capturedUsers.size());
+//    }
 
-        String newPassword = "newTest";
-        String generatedToken = "12345";
-
-        RecoveryPasswordToken recoveryPasswordToken = new RecoveryPasswordToken(user, generatedToken);
-        when(recoveryPasswordTokenRepository.findById(generatedToken)).thenReturn(Optional.of(recoveryPasswordToken));
-        when(encoder.encode("newTest")).thenReturn("newTestEncoded");
-
-
-        userService.changePassword(generatedToken, newPassword);
-
-        verify(userRepository, times(1)).save(userArgumentCaptor.capture());
-        verify(recoveryPasswordTokenRepository, times(1)).findById(any());
-        verify(recoveryPasswordTokenRepository, times(1)).delete(any());
-
-        User capturedUser = userArgumentCaptor.getValue();
-        assertEquals("newTestEncoded", capturedUser.getPassword());
-    }
 }
-
-
 

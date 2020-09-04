@@ -1,18 +1,46 @@
-# phonebook-m9-1
-The project of 9-1 morning group
+# phonebook-m9-2
+The project of morning 9-2 group
 
-Tutorial "Connection to Postgres Database"
+Here should lie all the steps to run the project on a local machine.
 
-1.  Install PostgreSQL to your local computer and connect to the PostgreSQL database server from a client application such as psql or pgAdmin.
-2. Using psql or pgAdmin:
-    Create a new 'phonebook' database using basic details (username=postgres; password=123456) or your own. 
-    If you want to use your own details, it is necessary to update it in phonebook-api project (phonebook-api/src/main/resources/application.properties).
-    spring.datasource.url=jdbc:postgresql://localhost:5432/your_database_name
-    spring.datasource.username=your_user_name
-    spring.datasource.password=your_password
-    spring.jpa.hibernate.ddl-auto=create_OR_none
-3. Run phonebook-m9-1 project
+1. Connecting the project to the Database
+The project creates phonebooks with contacts for different users.
+For keeping data the project uses PostgreSQL Database.
+At first, you need to download PostgreSQL here 
+https://www.enterprisedb.com/downloads/postgres-postgresql-downloads and install it on a local machine.
+For installation PostgreSQL please follow steps on this page https://www.postgresqltutorial.com/install-postgresql/.
+Second, you need to connect to PostgreSQL Database Server. All steps you can see here 
+https://www.postgresqltutorial.com/connect-to-postgresql-database/.
+Third, you need to create PostgreSQL Database follow the instruction 
+https://www.postgresqltutorial.com/postgresql-create-database/.
+The second way to run a Postgres DB on a local machine is the following:
+First - go to the folder "postgres" in terminal.
+Second - run the command "docker-compose up".
+This way works if there is Docker installed on the machine. Also, the port serving the DB will be different - 5442
 
-#fields validation
-User registration flow is validated. All fields must not be empty.
-Field email is validated with pattern.
+After, you need to configure application.properties_ with the database name, PostgreSQL username and password.
+https://www.jetbrains.com/help/idea/connecting-to-a-database.html#connect-to-postgresql-database
+
+2. Adding Flyway
+Flyway is an open-source database migration tool.
+To create the first migration go to the application.properties and set:
+spring.jpa.hibernate.ddl-auto=
+
+Flyway automatically discovers migrations on the filesystem and on the Java classpath.
+To keep track of which migrations have already been applied when and by whom, Flyway adds a schema history table to your schema in PostgresSQL.
+To learn more about migrations go to https://flywaydb.org/documentation/migrations
+
+3. For Intellij IDEA users:
+To issue a query to a database, you must create a data source connection. 
+
+a. In the Database tool window (View | Tool Windows | Database), click the Data Source Properties icon The Data Source Properties icon.
+b. In the Data Sources and Drivers dialog, click the Add icon (+) and select PostgreSQL.
+c. Specify database connection details: your PostgresSQL user name and password. 
+d. To ensure that the connection to the data source is successful, click Test Connection.
+
+4. Using Swagger
+Swagger UI allows anyone to visualize and interact with the API’s resources without having any of the implementation logic in place. 
+It’s automatically generated from your OpenAPI (formerly known as Swagger) Specification, 
+with the visual documentation making it easy for back end implementation and client side consumption.
+
+To use Swagger Ui run the PhonebookApiApplication and visit the http://localhost:8080/swagger-ui.html page in your browser

@@ -1,101 +1,71 @@
-import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormControl, FormGroupDirective, NgForm } from '@angular/forms';
-import { Validators } from '@angular/forms';
-import {confirmPasswordValidator} from "../directive/confirm-password-validator.directive";
-import {ErrorStateMatcher} from '@angular/material/core';
+import {Component, OnInit} from '@angular/core';
+import {FormGroup, FormBuilder, Validators} from '@angular/forms';
+import {ActivatedRoute, Router} from "@angular/router";
+import {ConfirmedValidator} from "./confirmed.validator";
 import {UserService} from "../service/user.service";
-import {RegistrationUser} from "../model/registration-user.model";
-import {Router} from "@angular/router";
-
-export class MyErrorStateMatcher implements ErrorStateMatcher {
-  isErrorState(control: FormControl | null, form: FormGroupDirective | NgForm | null): boolean {
-    const invalidCtrl = !!(control && control.invalid && control.parent.dirty);
-    const invalidParent = !!(control && control.parent && control.parent.invalid && control.parent.hasError('differentPasswords') && (control.dirty || control.touched));
-
-    return (invalidCtrl || invalidParent);
-  }
-}
+import {HttpErrorResponse} from "@angular/common/http";
+import {throwError} from "rxjs";
 
 @Component({
   selector: 'app-registration',
   templateUrl: './registration.component.html',
   styleUrls: ['./registration.component.css']
 })
+
 export class RegistrationComponent implements OnInit {
 
-  registrationForm = new FormGroup({
-    email: new FormControl('', [
-      Validators.required,
-      Validators.pattern('^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[a-zA-Z]{2,10}$'),
-      Validators.minLength(6),
-      Validators.maxLength(50)
-    ]),
-    password: new FormControl('', [
-      Validators.required,
-      Validators.minLength(5),
-      Validators.maxLength(10)
-    ]),
-    confirmPassword: new FormControl(''),
-  }, { validators: confirmPasswordValidator });
+  title = 'Sign up';
+  angForm: FormGroup;
+  loading: boolean;
+  error: string;
 
-  confirmPasswordMatcher = new MyErrorStateMatcher();
+  constructor(private fb: FormBuilder,
+              private router: Router,
+              private userService: UserService) {
 
-  errorMessage = '';
+    this.createForm();
+  }
 
-  constructor(private userService: UserService, private router: Router) { }
+  createForm() {
+    this.angForm = this.fb.group({
+      email: ['', [Validators.required, Validators.pattern("^[a-z0-9._-]+@[a-z0-9.-]+\\.[a-z]{2,10}$")]],
+      password: ['', [Validators.required, Validators.minLength(8)],
+        [Validators.required, Validators.maxLength(20)]],
+      confirm_password: ['', [Validators.required]]
+    }, {
+      validators: ConfirmedValidator('password', 'confirm_password')
+    });
+  }
 
   ngOnInit(): void {
   }
 
-  getEmailErrorMessage() {
-    if (this.registrationForm.get('email').hasError('required')) {
-      return 'Required field';
-    }
-    else if (this.registrationForm.get('email').hasError('pattern')) {
-      return 'Invalid email';
-    }
-    else if (this.registrationForm.get('email').hasError('minlength')) {
-      return 'Min length is 6 characters';
-    }
-    else if (this.registrationForm.get('email').hasError('maxlength')) {
-      return 'Max length is 50 characters';
-    }
-    else {
-      return '';
-    }
-  }
-
-  getPasswordErrorMessage() {
-    if (this.registrationForm.get('password').hasError('required')) {
-      return 'Required field';
-    }
-    else if (this.registrationForm.get('password').hasError('minlength')) {
-      return 'Min length is 5 characters';
-    }
-    else if (this.registrationForm.get('password').hasError('maxlength')) {
-      return 'Max length is 10 characters';
-    }
-    else {
-      return '';
-    }
-  }
-
   onSubmit() {
-    this.errorMessage = '';
-
-    let user: RegistrationUser = {
-      email: this.registrationForm.get('email').value,
-      password: this.registrationForm.get('password').value
-    };
-
-    this.userService.registerNewUser(user)
+    // @ts-ignore
+    this.loading = true;
+    this.userService.newUserRegistration(this.angForm.value)
       .subscribe(
-        () => {
-          this.router.navigate(['user/pending'])
+        data => {
+          this.router.navigate(['user/activate-email']);
         },
-        (error) => {
-          this.errorMessage = error;
+        error => {
+          // @ts-ignore
+          this.error = handleError(error);
+          this.loading = false;
         }
-      );
+      )
+
+    function handleError(error: HttpErrorResponse) {
+      if (error.error instanceof ErrorEvent) {
+        // network error
+        console.error(`No internet connection`);
+      } else {
+        // the response may contain hints of what went wrong
+        console.error(`Error code: ${error.status}`);
+      }
+      // user facing error message
+      return throwError(`Something bad happened; please try again later.`);
+    }
   }
+
 }

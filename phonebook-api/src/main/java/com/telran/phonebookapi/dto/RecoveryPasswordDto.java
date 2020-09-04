@@ -1,16 +1,16 @@
 package com.telran.phonebookapi.dto;
 
-import lombok.Getter;
+import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.Email;
-import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotBlank;
 
 @NoArgsConstructor
-@Getter
+@AllArgsConstructor
 public class RecoveryPasswordDto {
-
-    @Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[a-zA-Z]{2,10}$")
-    @NotEmpty(message = "Please provide an e-mail")
+    @Email(message = "Please, check entered email is correct",
+            regexp = "^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,10}$")
+    @NotBlank
     public String email;
 }
