@@ -1,112 +1,115 @@
 package com.telran.phonebookapi.service;
 
-import com.telran.phonebookapi.errorHandler.TokenNotFoundException;
-import com.telran.phonebookapi.errorHandler.UserDoesntExistException;
-import com.telran.phonebookapi.errorHandler.UserExistsException;
-import com.telran.phonebookapi.model.ConfirmationToken;
-import com.telran.phonebookapi.model.RecoveryPasswordToken;
-import com.telran.phonebookapi.model.User;
-import com.telran.phonebookapi.persistence.IConfirmationTokenRepository;
-import com.telran.phonebookapi.persistence.IRecoveryPasswordToken;
-import com.telran.phonebookapi.persistence.IUserRepository;
+import com.telran.phonebookapi.dto.UserDto;
+import com.telran.phonebookapi.exception.TokenNotFoundException;
+import com.telran.phonebookapi.exception.UserAlreadyExistsException;
+import com.telran.phonebookapi.mapper.UserMapper;
+import com.telran.phonebookapi.model.*;
+import com.telran.phonebookapi.persistance.IActivationTokenRepository;
+import com.telran.phonebookapi.persistance.IContactRepository;
+import com.telran.phonebookapi.persistance.IRecoveryTokenRepository;
+import com.telran.phonebookapi.persistance.IUserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import javax.persistence.EntityNotFoundException;
 import java.util.UUID;
 
 @Service
 public class UserService {
 
-    private final IUserRepository userRepository;
-    private final EmailSenderService emailSenderService;
-    private final IConfirmationTokenRepository confirmationTokenRepository;
-    private final BCryptPasswordEncoder encoder;
-    private final IRecoveryPasswordToken recoveryPasswordTokenRepo;
-
-    public UserService(IUserRepository userRepository, EmailSenderService emailSenderService, IConfirmationTokenRepository confirmationTokenRepository, BCryptPasswordEncoder encoder, IRecoveryPasswordToken recoveryPasswordTokenRepo) {
-        this.userRepository = userRepository;
-        this.emailSenderService = emailSenderService;
-        this.confirmationTokenRepository = confirmationTokenRepository;
-        this.encoder = encoder;
-        this.recoveryPasswordTokenRepo = recoveryPasswordTokenRepo;
-    }
+    static final String USER_ALREADY_EXISTS = "Error! User already exists";
+    static final String ACTIVATION_SUBJECT = "User activation";
+    static final String ACTIVATION_MESSAGE = "Please, follow the link to activate your account: ";
+    static final String NOT_ACTIVE_LINK = "Your link is not active anymore";
+    static final String USER_DOES_NOT_EXIST = "Error! This user doesn't exist in our DB";
+    static final String RECOVER_YOUR_PASSWORD_MESSAGE = "Please click the link to recover your password ";
+    static final String UI_RECOVERY_LINK = "/user/password-recovery/";
+    static final String UI_ACTIVATION_LINK = "/user/activation/";
 
     @Value("${com.telran.phonebook.ui.host}")
-    String uiHost;
+    private String uiHost;
 
-    private final String REGISTRATION_MESSAGE = "Thank you for registration on PhoneBook Appl." +
-            " Please, visit the following link: %s" +
-            "user/activation/%s";
-    static final String SUBJ = "activation of you account";
-    static final String USER_EXISTS = "User already exists";
-    static final String NO_REGISTRATION = "Please, register";
-    final String MESSAGE_RECOVER_PASSWORD_REQUEST = "You have requested the recovery password option." +
-            " Please, visit next link: %s" +
-            "user/new-password/%s";
-    static final String RECOVERY_PASSWORD = "Recovery password";
-    static final String USER_DOESNT_EXIST = "Person not found";
-    static final String INVALID_TOKEN = "Please, request your link once again";
+    private final IUserRepository userRepository;
+    private final IContactRepository contactRepository;
+    private final IActivationTokenRepository activationTokenRepository;
+    private final IRecoveryTokenRepository recoveryTokenRepository;
+    private final EmailSender emailSender;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    UserMapper userMapper;
 
-    @Value("${spring.mail.username}")
-    private String mailFrom;
+    public UserService(IUserRepository userRepository,
+                       IContactRepository contactRepository,
+                       IActivationTokenRepository activationTokenRepository,
+                       EmailSender emailSender,
+                       IRecoveryTokenRepository recoveryTokenRepository,
+                       BCryptPasswordEncoder bCryptPasswordEncoder,
+                       UserMapper userMapper) {
+        this.userRepository = userRepository;
+        this.contactRepository = contactRepository;
+        this.activationTokenRepository = activationTokenRepository;
+        this.emailSender = emailSender;
+        this.recoveryTokenRepository = recoveryTokenRepository;
+        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.userMapper = userMapper;
+    }
 
-    public void saveUser(String email, String password) {
-        Optional<User> userFromDB = userRepository.findById(email);
-
-        if (userFromDB.isPresent()) {
-            throw new UserExistsException(USER_EXISTS);
-        } else {  //new user
-            String encodedPass = encoder.encode(password);
-            User user = new User(email, encodedPass);
+    public void addUser(UserDto userDto) {
+        if (userRepository.findById(userDto.email).isPresent()) {
+            throw new UserAlreadyExistsException(USER_ALREADY_EXISTS);
+        } else {
+            String token = UUID.randomUUID().toString();
+            String encodedPassword = bCryptPasswordEncoder.encode(userDto.password);
+            User user = new User(userDto.email, encodedPassword);
+            user.setActive(false);
+            user.addRole(UserRole.USER);
+            Contact profile = new Contact();
+            user.setMyProfile(profile);
+            contactRepository.save(profile);
             userRepository.save(user);
 
-            String tokenString = UUID.randomUUID().toString();
+            userDto.contactDtos.stream()
+                    .map(contactIn -> new Contact(contactIn.firstName, user))
+                    .forEach(contactRepository::save);
 
-            ConfirmationToken token = new ConfirmationToken(user, tokenString);
-            confirmationTokenRepository.save(token);
-
-            String message = String.format(REGISTRATION_MESSAGE, uiHost, tokenString);
-            emailSenderService.sendMail(email, mailFrom,
-                    SUBJ,
-                    message);
+            activationTokenRepository.save(new ActivationToken(token, user));
+            emailSender.sendMail(user.getEmail(), ACTIVATION_SUBJECT, ACTIVATION_MESSAGE
+                    + uiHost + UI_ACTIVATION_LINK + token);
         }
     }
 
     public void activateUser(String token) {
-        ConfirmationToken confirmationToken = confirmationTokenRepository.findById(token).orElseThrow(() -> new TokenNotFoundException(NO_REGISTRATION));
-
-        User user = confirmationToken.getUser();
+        ActivationToken activationToken = activationTokenRepository.findById(token).
+                orElseThrow(() -> new TokenNotFoundException(NOT_ACTIVE_LINK));
+        User user = activationToken.getUser();
         user.setActive(true);
         userRepository.save(user);
-
-        confirmationTokenRepository.delete(confirmationToken);
+        activationTokenRepository.delete(activationToken);
     }
 
-    public String generateToken() {
-        return UUID.randomUUID().toString();
+    public void sendRecoveryToken(String email) {
+        User ourUser = userRepository.findById(email).orElseThrow(() -> new EntityNotFoundException(USER_DOES_NOT_EXIST));
+        String token = UUID.randomUUID().toString();
+        RecoveryToken recoveryToken = new RecoveryToken(token, ourUser);
+        recoveryTokenRepository.save(recoveryToken);
+
+        String message = RECOVER_YOUR_PASSWORD_MESSAGE + uiHost + UI_RECOVERY_LINK + token;
+
+        emailSender.sendMail(email, "Password recovery", message);
     }
 
-    public void requestRecoveryPassword(String email) {
-        User user = userRepository.findById(email).orElseThrow(() -> new UserDoesntExistException(USER_DOESNT_EXIST));
+    public void createNewPassword(String recoveryToken, String password) {
+        RecoveryToken token = recoveryTokenRepository.findById(recoveryToken).orElseThrow(() -> new TokenNotFoundException(NOT_ACTIVE_LINK));
+        User ourUser = token.getUser();
+        final String encryptedPassword = bCryptPasswordEncoder.encode(password);
 
-        String generatedToken = generateToken();
-
-        RecoveryPasswordToken recoveryToken = new RecoveryPasswordToken(user, generatedToken);
-        recoveryPasswordTokenRepo.save(recoveryToken);
-
-        String message = String.format(MESSAGE_RECOVER_PASSWORD_REQUEST, uiHost, generatedToken);
-        emailSenderService.sendMail(email, mailFrom, RECOVERY_PASSWORD, message);
+        ourUser.setPassword(encryptedPassword);
+        userRepository.save(ourUser);
+        recoveryTokenRepository.delete(token);
     }
 
-    public void changePassword(String token, String password) {
-        RecoveryPasswordToken tokenFromDB = recoveryPasswordTokenRepo.findById(token).orElseThrow(() -> new TokenNotFoundException(INVALID_TOKEN));
-
-        User user = tokenFromDB.getUser();
-        String encodedPass = encoder.encode(password);
-        user.setPassword(encodedPass);
-        userRepository.save(user);
-        recoveryPasswordTokenRepo.delete(tokenFromDB);
+    public User getUserByEmail(String email) {
+        return userRepository.findById(email).orElseThrow(() -> new EntityNotFoundException(USER_DOES_NOT_EXIST));
     }
 }

@@ -1,40 +1,48 @@
+<app-header></app-header>
+<form [formGroup]="angForm" novalidate class="border border-light p-5" (ngSubmit)="onSubmit()">
+  <p class="h4 mb-4 text-center">{{title}}</p>
+  <div class="form-group">
+    <input class="form-control mb-2" id="defaultRegisterFormEmail" formControlName="email" type="email"
+           placeholder="Email">
+  </div>
+  <div
+    *ngIf="angForm.controls['email'].invalid && (angForm.controls['email'].dirty || angForm.controls['email'].touched)"
+    class="alert alert-danger">
+    <div *ngIf="angForm.controls['email'].errors.required">
+      Email is required.
+    </div>
+    <div *ngIf="angForm.controls['email'].errors.pattern">
+      Email must be a valid email address.
+    </div>
+  </div>
+  <div class="form-group">
+    <input class="form-control" formControlName="password" type="password" placeholder="Password">
+  </div>
+  <div
+    *ngIf="angForm.controls['password'].invalid && (angForm.controls['password'].dirty || angForm.controls['password'].touched)"
+    class="alert alert-danger">
+    <div *ngIf="angForm.controls['password'].errors.required">
+      Password is required.
+    </div>
+    <div *ngIf="angForm.controls['password'].errors.minlength">
+      Password must be at least 8 characters.
+    </div>
+    <div *ngIf="angForm.controls['password'].errors.maxlength">
+      Password must be at least 20 characters.
+    </div>
+  </div>
 
-<!DOCTYPE html>
-<!--[if lt IE 7]> <html class="lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
-<!--[if IE 7]> <html class="lt-ie9 lt-ie8" lang="en"> <![endif]-->
-<!--[if IE 8]> <html class="lt-ie9" lang="en"> <![endif]-->
-<!--[if gt IE 8]><!--> <html lang="en"> <!--<![endif]-->
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title>Registration Form</title>
-  <link rel="stylesheet" href="registration.component.css">
-  <!--[if lt IE 9]><script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-</head>
-<body>
-<div *ngIf="errorMessage.length>0" class="alert alert-danger">{{errorMessage}}</div>
-
-<h1 class="register-title">Registration</h1>
-
-<form class="register" [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
-
-  <mat-form-field appearance="standard">
-    <input matInput type="text" placeholder="Email address" formControlName="email">
-    <mat-error *ngIf="registrationForm.get('email').invalid">{{getEmailErrorMessage()}}</mat-error>
-  </mat-form-field>
-
-  <mat-form-field appearance="standard">
-    <input matInput type="password" placeholder="Password" formControlName="password">
-    <mat-error *ngIf="registrationForm.get('password').invalid">{{getPasswordErrorMessage()}}</mat-error>
-  </mat-form-field>
-
-  <mat-form-field appearance="standard">
-    <input matInput type="password" placeholder="Confirm password" formControlName="confirmPassword" [errorStateMatcher]="confirmPasswordMatcher">
-    <mat-error *ngIf="registrationForm.errors?.differentPasswords && (registrationForm.touched || registrationForm.dirty)">Confirm password does not match</mat-error>
-  </mat-form-field>
-
-  <input type="submit" value="Create Account" class="register-button" [disabled]="!registrationForm.valid">
+  <div class="form-group">
+    <input class="form-control" formControlName="confirm_password" type="password" placeholder="Confirm Password">
+  </div>
+  <div
+    *ngIf="angForm.controls['confirm_password'].invalid && (angForm.controls['confirm_password'].dirty || angForm.controls['confirm_password'].touched)"
+    class="alert alert-danger">
+    <div *ngIf="angForm.controls['confirm_password'].errors.confirmedValidator">
+      Password do not match.
+    </div>
+  </div>
+  <button type="submit" [disabled]="angForm.pristine || angForm.invalid" class="btn btn-info my-1 btn-block">Sign up</button>
+  <a class="btn btn-success btn-block" routerLink="/user/login">Login</a>
 </form>
-
-</body>
-</html>
+<app-footer></app-footer>

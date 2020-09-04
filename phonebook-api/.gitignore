@@ -1,3 +1,6 @@
+# General
+.DS_Store
+
 HELP.md
 .gradle
 build/
@@ -34,4 +37,4 @@ out/
 ### VS Code ###
 .vscode/
 
-/src/main/resources/application.properties
+src/main/resources/application.properties

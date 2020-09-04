@@ -1,37 +1,34 @@
-import {Component, OnInit} from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
-import {UserService} from "../service/user.service";
+import { Component, OnInit } from '@angular/core';
+import { Subscription } from "rxjs";
+import { ActivatedRoute } from "@angular/router";
+import { UserService } from "../service/user.service";
 
 @Component({
-  selector: 'app-registration-confirmation',
+  selector: 'app-activation',
   templateUrl: './activation.component.html',
   styleUrls: ['./activation.component.css']
 })
 export class ActivationComponent implements OnInit {
-  showSpinner = true;
-  showSuccess = false;
-  errorMessage = '';
 
-  constructor(private userService: UserService, private route: ActivatedRoute) {
+  private subscription: Subscription;
+  RegistrationSuccess = true;
+
+  constructor(private route: ActivatedRoute,
+              private userService: UserService) {
   }
 
   ngOnInit(): void {
-    this.sendToken();
+    this.sendToken()
   }
 
-  sendToken(): void {
+  sendToken() {
     const token = this.route.snapshot.paramMap.get('token');
 
-    this.userService.activateUser(token)
-      .subscribe(
-        () => {
-          this.showSpinner = false;
-          this.showSuccess = true;
-        },
-        (error) => {
-          this.showSpinner = false;
-          this.errorMessage = error;
-        }
-      );
+    this.subscription = this.userService.sendRequestToConfirmRegistration(token).subscribe(_ => {
+      },
+      _ => {
+        this.RegistrationSuccess = false;
+      });
   }
+
 }
